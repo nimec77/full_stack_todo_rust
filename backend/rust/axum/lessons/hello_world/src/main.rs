@@ -1,14 +1,6 @@
-use axum::{Router, routing::get};
-use tokio::net::TcpListener;
+use hello_world::run;
 
 #[tokio::main]
 async fn main() {
-    let app = Router::new().route("/", get(hello_world));
-
-    let listener = TcpListener::bind("127.0.0.1:3000").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
-}
-
-async fn hello_world() -> &'static str {
-    "Hello, World!!!"
+    run().await;
 }
