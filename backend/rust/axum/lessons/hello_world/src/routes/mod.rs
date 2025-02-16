@@ -5,7 +5,9 @@ mod path_variables;
 mod query_params;
 mod mirror_user_agent;
 mod mirror_custom_header;
-use axum::{routing::{get, post}, Router};
+
+use axum::{http::Method, routing::{get, post}, Router};
+use tower_http::cors::{Any, CorsLayer};
 
 use hello_world::hello_world;
 use mirror_body_string::mirror_body_string;
@@ -16,6 +18,10 @@ use mirror_user_agent::mirror_user_agent;
 use mirror_custom_header::mirror_custom_header;
 
 pub fn create_routes() -> Router {
+    let cors = CorsLayer::new()
+        .allow_methods([Method::GET, Method::POST])
+        .allow_origin(Any);    
+
     Router::new()
         .route("/", get(hello_world))
         .route("/mirror_body_string", post(mirror_body_string))
@@ -25,4 +31,5 @@ pub fn create_routes() -> Router {
         .route("/query_params", get(query_params))
         .route("/mirror_user_agent", get(mirror_user_agent))
         .route("/mirror_custom_header", get(mirror_custom_header))
+        .layer(cors)
 }
