@@ -8,7 +8,7 @@ mod mirror_custom_header;
 mod middleware_message;
 mod read_middleware_custom_header;
 mod set_middleware_custom_header;
-
+mod always_error;
 use axum::{http::Method, middleware, routing::{get, post}, Extension, Router};
 use tower_http::cors::{Any, CorsLayer};
 
@@ -22,6 +22,7 @@ use mirror_custom_header::mirror_custom_header;
 use middleware_message::middleware_message;
 use read_middleware_custom_header::read_middleware_custom_header;
 use set_middleware_custom_header::set_middleware_custom_header;
+use always_error::always_error;
 
 #[derive(Clone)]
 pub struct SharedData {
@@ -49,6 +50,7 @@ pub fn create_routes() -> Router {
         .route("/mirror_user_agent", get(mirror_user_agent))
         .route("/mirror_custom_header", get(mirror_custom_header))
         .route("/middleware_message", get(middleware_message))
-        .layer(cors)
         .layer(Extension(shared_data))
+        .layer(cors)
+        .route("/always_error", get(always_error))
 }
