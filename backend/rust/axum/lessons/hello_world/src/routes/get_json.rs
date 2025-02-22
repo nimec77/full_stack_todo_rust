@@ -3,9 +3,9 @@ use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct Data {
-    pub message: String,
-    pub count: i32,
-    pub username: String,
+    message: String,
+    count: i32,
+    username: String,
 }
 
 pub async fn get_json() -> Json<Data> {
