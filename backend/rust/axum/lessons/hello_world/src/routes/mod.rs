@@ -12,6 +12,7 @@ mod always_error;
 mod returns_201;
 mod get_json;
 mod validate_with_serde;
+mod custom_json_extractor;
 
 use axum::{http::Method, middleware, routing::{get, post}, Extension, Router};
 use tower_http::cors::{Any, CorsLayer};
@@ -30,6 +31,7 @@ use always_error::always_error;
 use returns_201::returns_201;
 use get_json::get_json;
 use validate_with_serde::validate_with_serde;
+use custom_json_extractor::custom_json_extractor;
 
 #[derive(Clone)]
 pub struct SharedData {
@@ -63,4 +65,5 @@ pub fn create_routes() -> Router {
         .route("/returns_201", post(returns_201))
         .route("/get_json", get(get_json))
         .route("/validate_with_serde", post(validate_with_serde))
+        .route("/custom_json_extractor", post(custom_json_extractor))
 }
