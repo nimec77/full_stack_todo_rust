@@ -7,6 +7,6 @@ use crate::routes::{hello_world::hello_world, tasks::create_task::create_task};
 pub fn create_router(database: DatabaseConnection) -> Router {
     Router::new()
         .route("/", get(hello_world))
-        .route("/tasks", post(create_task))
+        .route("/create_task", post(create_task))
         .layer(Extension(database))
 }
