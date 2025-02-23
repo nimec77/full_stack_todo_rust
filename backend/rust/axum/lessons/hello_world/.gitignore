@@ -8,3 +8,6 @@
 
 #Rust
 .rustfmt.toml
+
+#Postgres
+rust-db.session.sql
