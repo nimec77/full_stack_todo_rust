@@ -1,0 +1,41 @@
+# Ignore Rust compilation output
+/target/
+/debug/
+/release/
+
+# Ignore build scripts output
+**/*.rs.bk
+
+# Ignore Cargo locks for non-library crates
+Cargo.lock
+
+# Ignore generated documentation
+/target/doc/
+
+# Ignore backup files
+*.bak
+*.swp
+*.swo
+
+# Ignore dependency directory (if using Cargo workspaces)
+/node_modules/
+
+# Ignore editor/IDE specific files
+.idea/
+.vscode/
+*.iml
+
+# Ignore Rust toolchain overrides
+rust-toolchain
+rust-toolchain.toml
+
+# Ignore logs and temporary files
+*.log
+*.tmp
+*.cache
+
+# Environment variables
+.env
+
+# SQLTools
+rust-db.session.sql
