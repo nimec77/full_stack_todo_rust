@@ -8,5 +8,5 @@ async fn main() {
 
     let database_url = dotenv!("DATABASE_URL");
 
-    run(&database_url).await;
+    run(database_url).await;
 }
