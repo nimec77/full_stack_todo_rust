@@ -33,3 +33,9 @@ rust-toolchain.toml
 *.log
 *.tmp
 *.cache
+
+# Environment variables
+.env
+
+# SQLTools
+rust-db.session.sql
