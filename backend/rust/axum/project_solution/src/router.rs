@@ -1,6 +1,5 @@
 use axum::{
-    Extension, Router,
-    routing::{get, post, put},
+    routing::{get, patch, post, put}, Extension, Router
 };
 use sea_orm::DatabaseConnection;
 
@@ -10,6 +9,7 @@ use crate::routes::{
         create_task::create_task,
         get_tasks::{get_all_tasks, get_one_task},
         update_task::atomic_update_task,
+        partial_update_task::partial_update_task,
     },
 };
 
@@ -20,5 +20,6 @@ pub fn create_router(database: DatabaseConnection) -> Router {
         .route("/task/{id}", get(get_one_task))
         .route("/tasks", get(get_all_tasks))
         .route("/task/{id}", put(atomic_update_task))
+        .route("/task/{id}", patch(partial_update_task))
         .layer(Extension(database))
 }
