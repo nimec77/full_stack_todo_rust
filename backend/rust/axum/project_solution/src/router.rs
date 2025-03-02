@@ -12,6 +12,7 @@ use crate::routes::{
         partial_update_task::partial_update_task,
         delete_task::delete_task,
     },
+    users::create_user::create_user,
 };
 
 pub fn create_router(database: DatabaseConnection) -> Router {
@@ -23,5 +24,6 @@ pub fn create_router(database: DatabaseConnection) -> Router {
         .route("/task/{id}", put(atomic_update_task))
         .route("/task/{id}", patch(partial_update_task))
         .route("/task/{id}", delete(delete_task))
+        .route("/user", post(create_user))
         .layer(Extension(database))
 }
