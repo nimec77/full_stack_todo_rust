@@ -1,6 +1,7 @@
 use crate::database::{tasks, tasks::Entity as Task, tasks::Model as TaskModel};
 use axum::extract::{Path, Query};
 use axum::{Extension, Json, http::StatusCode};
+use chrono::{DateTime, FixedOffset};
 use sea_orm::{ColumnTrait, Condition, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
 
@@ -10,15 +11,17 @@ pub struct ResponseTask {
     title: String,
     description: Option<String>,
     priority: Option<String>,
+    deleted_at: Option<DateTime<FixedOffset>>,
 }
 
 impl From<TaskModel> for ResponseTask {
-    fn from(model: TaskModel) -> Self {
+    fn from(task: TaskModel) -> Self {
         Self {
-            id: model.id,
-            title: model.title,
-            description: model.description,
-            priority: model.priority,
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            priority: task.priority,
+            deleted_at: task.deleted_at,
         }
     }
 }
@@ -32,7 +35,11 @@ pub async fn get_one_task(
     Extension(database): Extension<DatabaseConnection>,
     Path(task_id): Path<i32>,
 ) -> Result<Json<ResponseTask>, StatusCode> {
-    let task = Task::find_by_id(task_id).one(&database).await.unwrap();
+    let task = Task::find_by_id(task_id)
+        .filter(tasks::Column::DeletedAt.is_null())
+        .one(&database)
+        .await
+        .unwrap();
 
     if let Some(task) = task {
         Ok(Json(ResponseTask::from(task)))
@@ -45,7 +52,7 @@ pub async fn get_all_tasks(
     Extension(database): Extension<DatabaseConnection>,
     Query(query_params): Query<GetTaskQueryParams>,
 ) -> Result<Json<Vec<ResponseTask>>, StatusCode> {
-    let mut priority_filter = Condition::all();
+    let mut priority_filter = Condition::all().add(tasks::Column::DeletedAt.is_null());
 
     if let Some(priority) = query_params.priority {
         priority_filter = if priority.is_empty() {
