@@ -12,6 +12,7 @@ pub struct ResponseTask {
     description: Option<String>,
     priority: Option<String>,
     deleted_at: Option<DateTime<FixedOffset>>,
+    user_id: Option<i32>,
 }
 
 impl From<TaskModel> for ResponseTask {
@@ -22,6 +23,7 @@ impl From<TaskModel> for ResponseTask {
             description: task.description,
             priority: task.priority,
             deleted_at: task.deleted_at,
+            user_id: task.user_id,
         }
     }
 }
