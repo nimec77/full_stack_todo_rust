@@ -1,5 +1,5 @@
 use axum::{
-    Extension, Router,
+    Extension, Router, middleware,
     routing::{delete, get, patch, post, put},
 };
 use sea_orm::DatabaseConnection;
@@ -16,17 +16,20 @@ use crate::routes::{
     users::{create_user::create_user, login::login, logout::logout},
 };
 
+use crate::middleware::require_authentication::require_authentication;
+
 pub fn create_router(database: DatabaseConnection) -> Router {
     Router::new()
-        .route("/", get(hello_world))
+        .route("/user", post(create_user))
         .route("/task", post(create_task))
+        .route("/users/logout", post(logout))
         .route("/task/{id}", get(get_one_task))
         .route("/tasks", get(get_all_tasks))
         .route("/task/{id}", put(atomic_update_task))
         .route("/task/{id}", patch(partial_update_task))
         .route("/task/{id}", delete(delete_task))
-        .route("/user", post(create_user))
+        .route_layer(middleware::from_fn(require_authentication))
+        .route("/", get(hello_world))
         .route("/users/login", post(login))
-        .route("/users/logout", post(logout))
         .layer(Extension(database))
 }

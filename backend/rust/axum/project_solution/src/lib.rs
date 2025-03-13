@@ -1,6 +1,7 @@
 mod routes;
 mod router;
 mod database;
+mod middleware;
 
 use sea_orm::Database;
 use tokio::net::TcpListener;
