@@ -9,7 +9,7 @@ use sea_orm::{
 use serde::Deserialize;
 
 use crate::database::tasks;
-use crate::database::users::{self, Entity as User};
+use crate::database::users::{self, Entity as Users};
 
 #[derive(Debug, Deserialize)]
 pub struct RequestTask {
@@ -25,11 +25,11 @@ pub async fn create_task(
 ) -> Result<StatusCode, StatusCode> {
     let token = authorization.token();
 
-    let user = if let Some(user) = User::find()
+    let user = if let Some(user) = Users::find()
         .filter(users::Column::Token.eq(token))
         .one(&database)
         .await
-        .map_err(|_: DbErr| StatusCode::UNAUTHORIZED)?
+        .map_err(|_: DbErr| StatusCode::INTERNAL_SERVER_ERROR)?
     {
         user
     } else {
