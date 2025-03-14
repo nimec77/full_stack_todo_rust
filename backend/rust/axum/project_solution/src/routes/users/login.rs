@@ -1,4 +1,7 @@
-use crate::database::{users, users::ActiveModel as UserActiveModel, users::Entity as User};
+use crate::{
+    database::users::{self, ActiveModel as UserActiveModel, Entity as Users},
+    utilities::hash::verify_password,
+};
 use axum::{Extension, Json, http::StatusCode};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, IntoActiveModel,
@@ -31,19 +34,19 @@ impl From<UserActiveModel> for LoginResponse {
 
 pub async fn login(
     Extension(database): Extension<DatabaseConnection>,
-    Json(user): Json<LoginRequest>,
+    Json(request_user): Json<LoginRequest>,
 ) -> Result<Json<LoginResponse>, StatusCode> {
-    let filter = users::Column::Username
-        .eq(user.username)
-        .and(users::Column::Password.eq(user.password));
-
-    let user = User::find()
-        .filter(filter)
+    let user = Users::find()
+        .filter(users::Column::Username.eq(request_user.username))
         .one(&database)
         .await
         .map_err(|_: DbErr| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     if let Some(user) = user {
+        if !verify_password(&request_user.password, &user.password)? {
+            return Err(StatusCode::UNAUTHORIZED);
+        }
+
         let token = "random_token";
         let mut user = user.into_active_model();
         user.token = Set(Some(token.to_owned()));

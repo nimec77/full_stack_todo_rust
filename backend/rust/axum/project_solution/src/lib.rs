@@ -2,6 +2,7 @@ mod routes;
 mod router;
 mod database;
 mod middleware;
+mod utilities;
 
 use sea_orm::Database;
 use tokio::net::TcpListener;

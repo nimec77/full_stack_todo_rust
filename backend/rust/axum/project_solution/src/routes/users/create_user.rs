@@ -1,4 +1,4 @@
-use crate::database::users::ActiveModel as UserModel;
+use crate::{database::users::ActiveModel as UserModel, utilities::hash::hash_password};
 use axum::{Extension, Json, http::StatusCode};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, Set};
 use serde::{Deserialize, Serialize};
@@ -29,16 +29,20 @@ pub async fn create_user(
     Extension(database): Extension<DatabaseConnection>,
     Json(user): Json<CreateUserRequest>,
 ) -> Result<Json<CreateUserResponse>, StatusCode> {
+    let hashed_password = hash_password(&user.password)?;
     let new_user = UserModel {
         username: Set(user.username),
-        password: Set(user.password),
+        password: Set(hashed_password),
         token: Set(None),
         deleted_at: Set(None),
         ..Default::default()
     }
     .save(&database)
     .await
-    .map_err(|_: DbErr| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .map_err(|error: DbErr| {
+        println!("Error creating user: {:?}", error);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
     Ok(Json(CreateUserResponse::from(new_user)))
 }
