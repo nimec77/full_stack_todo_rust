@@ -2,7 +2,7 @@ use axum::{body::Body, http::{Request, Response, StatusCode}, middleware::Next};
 use axum_extra::headers::{authorization::Bearer, Authorization, HeaderMapExt};
 use sea_orm::{ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
 
-use crate::database::users::{self, Entity as Users};
+use crate::{database::users::{self, Entity as Users}, utilities::jwt::validate_token};
 
 pub async fn require_authentication(
     mut request: Request<Body>,
@@ -17,11 +17,13 @@ pub async fn require_authentication(
     .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let user = Users::find()
-    .filter(users::Column::Token.eq(token))
+    .filter(users::Column::Token.eq(&token))
     .one(database)
     .await
     .map_err(|_: DbErr| StatusCode::INTERNAL_SERVER_ERROR)?;
     
+    validate_token(&token)?;
+
     let Some(user) = user else {
         return Err(StatusCode::UNAUTHORIZED);
     };

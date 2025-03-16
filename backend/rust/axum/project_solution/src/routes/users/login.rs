@@ -1,6 +1,6 @@
 use crate::{
     database::users::{self, ActiveModel as UserActiveModel, Entity as Users},
-    utilities::hash::verify_password,
+    utilities::{hash::verify_password, jwt::create_token},
 };
 use axum::{Extension, Json, http::StatusCode};
 use sea_orm::{
@@ -47,7 +47,7 @@ pub async fn login(
             return Err(StatusCode::UNAUTHORIZED);
         }
 
-        let token = "random_token";
+        let token = create_token(&user.username)?;
         let mut user = user.into_active_model();
         user.token = Set(Some(token.to_owned()));
         let saved_user = user

@@ -2,7 +2,7 @@ use axum::{
     Extension, Router, middleware,
     routing::{delete, get, patch, post, put},
 };
-use sea_orm::DatabaseConnection;
+use crate::app_state::AppState;
 
 use crate::routes::{
     hello_world::hello_world,
@@ -18,7 +18,8 @@ use crate::routes::{
 
 use crate::middleware::require_authentication::require_authentication;
 
-pub fn create_router(database: DatabaseConnection) -> Router {
+pub fn create_router(app_state: AppState) -> Router {
+    let db = app_state.db;
     Router::new()
         .route("/user", post(create_user))
         .route("/task", post(create_task))
@@ -31,5 +32,5 @@ pub fn create_router(database: DatabaseConnection) -> Router {
         .route_layer(middleware::from_fn(require_authentication))
         .route("/", get(hello_world))
         .route("/users/login", post(login))
-        .layer(Extension(database))
+        .layer(Extension(db))
 }
