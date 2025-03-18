@@ -2,7 +2,7 @@ use axum::{Extension, Json, http::StatusCode};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, Set};
 use serde::Deserialize;
 
-use crate::database::{tasks, users::Model};
+use crate::{database::{tasks, users::Model}, errors::app_error::AppError};
 
 #[derive(Debug, Deserialize)]
 pub struct RequestTask {
@@ -15,7 +15,7 @@ pub async fn create_task(
     Extension(database): Extension<DatabaseConnection>,
     Extension(user): Extension<Model>,
     Json(request_task): Json<RequestTask>,
-) -> Result<StatusCode, StatusCode> {
+) -> Result<StatusCode, AppError> {
     let new_task = tasks::ActiveModel {
         priority: Set(request_task.priority),
         title: Set(request_task.title),
@@ -27,7 +27,7 @@ pub async fn create_task(
     new_task
         .save(&database)
         .await
-        .map_err(|_: DbErr| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|_: DbErr| AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error"))?;
 
     Ok(StatusCode::CREATED)
 }

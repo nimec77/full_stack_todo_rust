@@ -1,4 +1,8 @@
-use crate::{database::users::ActiveModel as UserModel, utilities::{hash::hash_password, jwt::create_token}};
+use crate::{
+    database::users::ActiveModel as UserModel,
+    errors::app_error::AppError,
+    utilities::{hash::hash_password, jwt::create_token},
+};
 use axum::{Extension, Json, http::StatusCode};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, Set};
 use serde::{Deserialize, Serialize};
@@ -28,9 +32,11 @@ impl From<UserModel> for CreateUserResponse {
 pub async fn create_user(
     Extension(database): Extension<DatabaseConnection>,
     Json(user): Json<CreateUserRequest>,
-) -> Result<Json<CreateUserResponse>, StatusCode> {
-    let hashed_password = hash_password(&user.password)?;
-    let token = create_token(&user.username)?;
+) -> Result<Json<CreateUserResponse>, AppError> {
+    let hashed_password = hash_password(&user.password)
+        .map_err(|_| AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error"))?;
+    let token = create_token(&user.username)
+        .map_err(|_| AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error"))?;
     let new_user = UserModel {
         username: Set(user.username),
         password: Set(hashed_password),
@@ -42,7 +48,7 @@ pub async fn create_user(
     .await
     .map_err(|error: DbErr| {
         println!("Error creating user: {:?}", error);
-        StatusCode::INTERNAL_SERVER_ERROR
+        AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
     })?;
 
     Ok(Json(CreateUserResponse::from(new_user)))

@@ -1,4 +1,5 @@
 use crate::database::{tasks, tasks::Entity as Task, tasks::Model as TaskModel};
+use crate::errors::app_error::AppError;
 use axum::extract::{Path, Query};
 use axum::{Extension, Json, http::StatusCode};
 use chrono::{DateTime, FixedOffset};
@@ -36,7 +37,7 @@ pub struct GetTaskQueryParams {
 pub async fn get_one_task(
     Extension(database): Extension<DatabaseConnection>,
     Path(task_id): Path<i32>,
-) -> Result<Json<ResponseTask>, StatusCode> {
+) -> Result<Json<ResponseTask>, AppError> {
     let task = Task::find_by_id(task_id)
         .filter(tasks::Column::DeletedAt.is_null())
         .one(&database)
@@ -46,14 +47,14 @@ pub async fn get_one_task(
     if let Some(task) = task {
         Ok(Json(ResponseTask::from(task)))
     } else {
-        Err(StatusCode::NOT_FOUND)
+        Err(AppError::new(StatusCode::NOT_FOUND, "Task not found"))
     }
 }
 
 pub async fn get_all_tasks(
     Extension(database): Extension<DatabaseConnection>,
     Query(query_params): Query<GetTaskQueryParams>,
-) -> Result<Json<Vec<ResponseTask>>, StatusCode> {
+) -> Result<Json<Vec<ResponseTask>>, AppError> {
     let mut priority_filter = Condition::all().add(tasks::Column::DeletedAt.is_null());
 
     if let Some(priority) = query_params.priority {
@@ -68,7 +69,7 @@ pub async fn get_all_tasks(
         .filter(priority_filter)
         .all(&database)
         .await
-        .map_err(|_: DbErr| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|_: DbErr| AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error"))?;
     let response_tasks = tasks.into_iter().map(ResponseTask::from).collect();
     Ok(Json(response_tasks))
 }

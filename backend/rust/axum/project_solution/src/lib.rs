@@ -4,7 +4,7 @@ mod database;
 mod middleware;
 mod utilities;
 pub mod app_state;
-
+pub mod errors;
 use app_state::AppState;
 use tokio::net::TcpListener;
 

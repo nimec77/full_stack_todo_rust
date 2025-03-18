@@ -7,6 +7,8 @@ use jsonwebtoken::{
 };
 use serde::{Deserialize, Serialize};
 
+use crate::errors::app_error::AppError;
+
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
     exp: usize,
@@ -37,11 +39,11 @@ pub fn create_token(username: &str) -> Result<String, StatusCode> {
     })
 }
 
-pub fn validate_token(token: &str) -> Result<bool, StatusCode> {
+pub fn validate_token(token: &str) -> Result<bool, AppError> {
     let jwt_secret = if let Ok(secret) = env::var("JWT_SECRET") {
         secret
     } else {
-        return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        return Err(AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error"));
     };
 
     let key = DecodingKey::from_secret(jwt_secret.as_bytes());
@@ -50,11 +52,11 @@ pub fn validate_token(token: &str) -> Result<bool, StatusCode> {
     decode::<Claims>(token, &key, &validation)
         .map_err(|error| match error.kind() {
             ErrorKind::ExpiredSignature | ErrorKind::InvalidToken | ErrorKind::InvalidSignature => {
-                StatusCode::UNAUTHORIZED
+                AppError::new(StatusCode::UNAUTHORIZED, "Not authenticated")
             }
             _ => {
                 eprintln!("Error verifying token: {:?}", error);
-                StatusCode::INTERNAL_SERVER_ERROR
+                AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Error validating token")
             }
         })
         .map(|_| true)

@@ -1,4 +1,4 @@
-use crate::database::tasks::Entity as Task;
+use crate::{database::tasks::Entity as Task, errors::app_error::AppError};
 use axum::{Extension, Json, extract::Path, http::StatusCode};
 use sea_orm::{
     DatabaseConnection, DbErr, EntityTrait, IntoActiveModel, Set, prelude::DateTimeWithTimeZone,
@@ -38,15 +38,15 @@ pub async fn partial_update_task(
     Extension(database): Extension<DatabaseConnection>,
     Path(task_id): Path<i32>,
     Json(request_task): Json<RequestTask>,
-) -> Result<(), StatusCode> {
+) -> Result<StatusCode, AppError> {
     let mut db_task = if let Some(task) = Task::find_by_id(task_id)
         .one(&database)
         .await
-        .map_err(|_: DbErr| StatusCode::INTERNAL_SERVER_ERROR)?
+        .map_err(|_: DbErr| AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error"))?
     {
         task.into_active_model()
     } else {
-        return Err(StatusCode::NOT_FOUND);
+        return Err(AppError::new(StatusCode::NOT_FOUND, "Task not found"));
     };
 
     if let Some(priority) = request_task.priority {
@@ -73,7 +73,7 @@ pub async fn partial_update_task(
     Task::update(db_task)
         .exec(&database)
         .await
-        .map_err(|_: DbErr| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|_: DbErr| AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error"))?;
 
-    Ok(())
+    Ok(StatusCode::OK)
 }
