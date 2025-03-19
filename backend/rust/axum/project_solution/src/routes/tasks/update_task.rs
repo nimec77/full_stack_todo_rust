@@ -1,5 +1,12 @@
-use crate::{database::tasks::{self, Column, Entity as Task}, errors::app_error::AppError};
-use axum::{Extension, Json, extract::Path, http::StatusCode};
+use crate::{
+    database::tasks::{self, Column, Entity as Task},
+    errors::app_error::AppError,
+};
+use axum::{
+    Json,
+    extract::{Path, State},
+    http::StatusCode,
+};
 use sea_orm::{
     ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter, Set,
     prelude::DateTimeWithTimeZone,
@@ -18,7 +25,7 @@ pub struct RequestTask {
 }
 
 pub async fn atomic_update_task(
-    Extension(database): Extension<DatabaseConnection>,
+    State(db): State<DatabaseConnection>,
     Path(task_id): Path<i32>,
     Json(request_task): Json<RequestTask>,
 ) -> Result<StatusCode, AppError> {
@@ -35,9 +42,11 @@ pub async fn atomic_update_task(
 
     Task::update(update_task)
         .filter(Column::Id.eq(task_id))
-        .exec(&database)
+        .exec(&db)
         .await
-        .map_err(|_: DbErr| AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error"))?;
+        .map_err(|_: DbErr| {
+            AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
+        })?;
 
     Ok(StatusCode::OK)
 }

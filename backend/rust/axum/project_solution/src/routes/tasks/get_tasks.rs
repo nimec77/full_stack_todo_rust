@@ -1,7 +1,7 @@
 use crate::database::{tasks, tasks::Entity as Task, tasks::Model as TaskModel};
 use crate::errors::app_error::AppError;
-use axum::extract::{Path, Query};
-use axum::{Extension, Json, http::StatusCode};
+use axum::extract::{Path, Query, State};
+use axum::{Json, http::StatusCode};
 use chrono::{DateTime, FixedOffset};
 use sea_orm::{ColumnTrait, Condition, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
@@ -35,12 +35,12 @@ pub struct GetTaskQueryParams {
 }
 
 pub async fn get_one_task(
-    Extension(database): Extension<DatabaseConnection>,
+    State(db): State<DatabaseConnection>,
     Path(task_id): Path<i32>,
 ) -> Result<Json<ResponseTask>, AppError> {
     let task = Task::find_by_id(task_id)
         .filter(tasks::Column::DeletedAt.is_null())
-        .one(&database)
+        .one(&db)
         .await
         .unwrap();
 
@@ -52,7 +52,7 @@ pub async fn get_one_task(
 }
 
 pub async fn get_all_tasks(
-    Extension(database): Extension<DatabaseConnection>,
+    State(db): State<DatabaseConnection>,
     Query(query_params): Query<GetTaskQueryParams>,
 ) -> Result<Json<Vec<ResponseTask>>, AppError> {
     let mut priority_filter = Condition::all().add(tasks::Column::DeletedAt.is_null());
@@ -67,9 +67,11 @@ pub async fn get_all_tasks(
 
     let tasks = Task::find()
         .filter(priority_filter)
-        .all(&database)
+        .all(&db)
         .await
-        .map_err(|_: DbErr| AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error"))?;
+        .map_err(|_: DbErr| {
+            AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
+        })?;
     let response_tasks = tasks.into_iter().map(ResponseTask::from).collect();
     Ok(Json(response_tasks))
 }

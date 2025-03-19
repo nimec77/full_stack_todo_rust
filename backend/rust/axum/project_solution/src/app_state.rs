@@ -1,10 +1,10 @@
-use axum::{extract::FromRef, http::Uri};
+use axum::extract::FromRef;
 use sea_orm::DatabaseConnection;
+
+use crate::utilities::token_wrapper::TokenWrapper;
 
 #[derive(Clone, FromRef)]
 pub struct AppState {
-    pub api_url: Uri,
     pub db: DatabaseConnection,
-    pub jwt_secret: String,
-    pub jwt_expiration_time: i64,
+    pub token_wrapper: TokenWrapper,
 }

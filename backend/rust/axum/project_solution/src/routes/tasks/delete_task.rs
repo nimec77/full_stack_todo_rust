@@ -1,6 +1,5 @@
 use axum::{
-    Extension,
-    extract::{Path, Query},
+    extract::{Path, Query, State},
     http::StatusCode,
 };
 use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, EntityTrait, IntoActiveModel, Set};
@@ -14,30 +13,34 @@ pub struct QueryParams {
 }
 
 pub async fn delete_task(
-    Extension(database): Extension<DatabaseConnection>,
+    State(db): State<DatabaseConnection>,
     Path(task_id): Path<i32>,
     Query(query_params): Query<QueryParams>,
 ) -> Result<StatusCode, AppError> {
     if query_params.soft {
-        let mut task = if let Some(task) = Task::find_by_id(task_id)
-            .one(&database)
-            .await
-            .map_err(|_: DbErr| AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error"))?
-        {
+        let mut task = if let Some(task) =
+            Task::find_by_id(task_id)
+                .one(&db)
+                .await
+                .map_err(|_: DbErr| {
+                    AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
+                })? {
             task.into_active_model()
         } else {
             return Err(AppError::new(StatusCode::NOT_FOUND, "Task not found"));
         };
         let now = chrono::Utc::now();
         task.deleted_at = Set(Some(now.into()));
-        task.update(&database)
-            .await
-            .map_err(|_: DbErr| AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error"))?;
+        task.update(&db).await.map_err(|_: DbErr| {
+            AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
+        })?;
     } else {
         Task::delete_by_id(task_id)
-            .exec(&database)
+            .exec(&db)
             .await
-            .map_err(|_: DbErr| AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error"))?;
+            .map_err(|_: DbErr| {
+                AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
+            })?;
     }
     Ok(StatusCode::NO_CONTENT)
 }

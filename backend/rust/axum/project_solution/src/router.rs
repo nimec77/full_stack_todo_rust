@@ -1,8 +1,8 @@
+use crate::app_state::AppState;
 use axum::{
-    Extension, Router, middleware,
+    Router, middleware,
     routing::{delete, get, patch, post, put},
 };
-use crate::app_state::AppState;
 
 use crate::routes::{
     hello_world::hello_world,
@@ -19,7 +19,6 @@ use crate::routes::{
 use crate::middleware::require_authentication::require_authentication;
 
 pub fn create_router(app_state: AppState) -> Router {
-    let db = app_state.db;
     Router::new()
         .route("/api/v1/user", post(create_user))
         .route("/api/v1/task", post(create_task))
@@ -29,8 +28,11 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/api/v1/task/{id}", put(atomic_update_task))
         .route("/api/v1/task/{id}", patch(partial_update_task))
         .route("/api/v1/task/{id}", delete(delete_task))
-        .route_layer(middleware::from_fn(require_authentication))
+        .route_layer(middleware::from_fn_with_state(
+            app_state.clone(),
+            require_authentication,
+        ))
         .route("/", get(hello_world))
         .route("/api/v1/users/login", post(login))
-        .layer(Extension(db))
+        .with_state(app_state)
 }

@@ -1,6 +1,6 @@
 use axum::http::Uri;
 use dotenvy::dotenv;
-use project_solution::{app_state::AppState, run};
+use project_solution::{app_state::AppState, run, utilities::token_wrapper::TokenWrapper};
 use sea_orm::Database;
 use std::env;
 
@@ -34,12 +34,12 @@ async fn main() {
         }
     };
 
-    let app_state = AppState {
-        api_url,
-        db,
-        jwt_secret,
-        jwt_expiration_time,
+    let token_wrapper = TokenWrapper {
+        secret: jwt_secret,
+        expiration_time: jwt_expiration_time,
     };
 
-    run(app_state).await;
+    let app_state = AppState { db, token_wrapper };
+
+    run(api_url, app_state).await;
 }

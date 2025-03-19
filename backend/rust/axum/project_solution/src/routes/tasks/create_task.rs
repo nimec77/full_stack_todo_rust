@@ -1,4 +1,4 @@
-use axum::{Extension, Json, http::StatusCode};
+use axum::{extract::State, http::StatusCode, Extension, Json};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, Set};
 use serde::Deserialize;
 
@@ -12,7 +12,7 @@ pub struct RequestTask {
 }
 
 pub async fn create_task(
-    Extension(database): Extension<DatabaseConnection>,
+    State(db): State<DatabaseConnection>,
     Extension(user): Extension<Model>,
     Json(request_task): Json<RequestTask>,
 ) -> Result<StatusCode, AppError> {
@@ -25,7 +25,7 @@ pub async fn create_task(
     };
 
     new_task
-        .save(&database)
+        .save(&db)
         .await
         .map_err(|_: DbErr| AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error"))?;
 
