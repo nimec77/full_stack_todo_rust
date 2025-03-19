@@ -11,8 +11,8 @@ use tokio::net::TcpListener;
 use router::create_router;
 
 pub async fn run(app_state: AppState) {
-    let app = create_router(app_state);
+    let app = create_router(app_state.clone());
 
-    let address = TcpListener::bind("127.0.0.1:4000").await.unwrap();
+    let address = TcpListener::bind(app_state.api_url.to_string()).await.unwrap();
     axum::serve(address, app).await.unwrap();
 }

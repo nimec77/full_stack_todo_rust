@@ -1,3 +1,4 @@
+use axum::http::Uri;
 use dotenvy::dotenv;
 use project_solution::{app_state::AppState, run};
 use sea_orm::Database;
@@ -6,6 +7,11 @@ use std::env;
 #[tokio::main]
 async fn main() {
     dotenv().ok();
+
+    let api_url = env::var("API_URL")
+        .expect("Missing environment variable API_URL")
+        .parse::<Uri>()
+        .expect("Invalid API_URL");
 
     let database_uri = env::var("DATABASE_URL")
         .expect("Missing environment variable DATABASE_URI")
@@ -29,6 +35,7 @@ async fn main() {
     };
 
     let app_state = AppState {
+        api_url,
         db,
         jwt_secret,
         jwt_expiration_time,
