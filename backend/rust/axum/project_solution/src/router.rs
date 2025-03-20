@@ -1,4 +1,4 @@
-use crate::app_state::AppState;
+use crate::{app_state::AppState, routes::users::delete_user::delete_user};
 use axum::{
     Router, middleware,
     routing::{delete, get, patch, post, put},
@@ -21,6 +21,7 @@ use crate::middleware::require_authentication::require_authentication;
 pub fn create_router(app_state: AppState) -> Router {
     Router::new()
         .route("/api/v1/user", post(create_user))
+        .route("/api/v1/user/{id}", delete(delete_user))
         .route("/api/v1/task", post(create_task))
         .route("/api/v1/users/logout", post(logout))
         .route("/api/v1/task/{id}", get(get_one_task))

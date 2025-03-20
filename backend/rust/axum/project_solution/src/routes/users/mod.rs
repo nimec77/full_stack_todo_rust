@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 pub mod create_user;
+pub mod delete_user;
 pub mod login;
 pub mod logout;
 
@@ -19,6 +20,7 @@ pub struct RequestUser {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ResponseUser {
+    id: i32,
     username: String,
     token: String,
 }
@@ -26,6 +28,7 @@ pub struct ResponseUser {
 impl From<UserActiveModel> for ResponseUser {
     fn from(user: UserActiveModel) -> Self {
         Self {
+            id: user.id.unwrap(),
             username: user.username.unwrap(),
             token: user.token.unwrap().unwrap(),
         }
