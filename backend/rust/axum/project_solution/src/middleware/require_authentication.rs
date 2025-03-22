@@ -26,10 +26,10 @@ pub async fn require_authentication(
         .token()
         .to_owned();
 
-    validate_token(&token_wrapper, &token)?;
+    let username = validate_token(&token_wrapper, &token)?;
 
     let user = Users::find()
-        .filter(users::Column::Token.eq(&token))
+        .filter(users::Column::Username.eq(&username))
         .one(&db)
         .await
         .map_err(|_: DbErr| {

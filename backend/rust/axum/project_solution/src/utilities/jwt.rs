@@ -11,7 +11,7 @@ use super::token_wrapper::TokenWrapper;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
-    exp: usize,
+    exp: usize,    
     username: String,
 }
 
@@ -34,7 +34,7 @@ pub fn create_token(token_wrapper: &TokenWrapper, username: &str) -> Result<Stri
     })
 }
 
-pub fn validate_token(token_wrapper: &TokenWrapper, token: &str) -> Result<bool, AppError> {
+pub fn validate_token(token_wrapper: &TokenWrapper, token: &str) -> Result<String, AppError> {
     let key = DecodingKey::from_secret(token_wrapper.secret.as_bytes());
     let validation = Validation::new(jsonwebtoken::Algorithm::HS256);
     
@@ -48,5 +48,6 @@ pub fn validate_token(token_wrapper: &TokenWrapper, token: &str) -> Result<bool,
                 AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Error validating token")
             }
         })
-        .map(|_| true)
+        .map(|token_data| token_data.claims.username)
 }
+
