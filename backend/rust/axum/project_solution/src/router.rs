@@ -20,7 +20,6 @@ use crate::middleware::require_authentication::require_authentication;
 
 pub fn create_router(app_state: AppState) -> Router {
     Router::new()
-        .route("/api/v1/user", post(create_user))
         .route("/api/v1/user/{id}", delete(delete_user))
         .route("/api/v1/task", post(create_task))
         .route("/api/v1/users/logout", post(logout))
@@ -35,5 +34,6 @@ pub fn create_router(app_state: AppState) -> Router {
         ))
         .route("/", get(hello_world))
         .route("/api/v1/users/login", post(login))
+        .route("/api/v1/user", post(create_user))
         .with_state(app_state)
 }
