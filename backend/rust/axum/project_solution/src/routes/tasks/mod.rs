@@ -3,7 +3,9 @@ pub mod delete_task;
 pub mod get_tasks;
 pub mod partial_update_task;
 pub mod update_task;
+pub mod create_task_extractor;
 
+use crate::database::tasks::Model as TaskModel;
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
 
@@ -47,4 +49,15 @@ pub struct ResponseDataTask {
 #[derive(Serialize, Deserialize)]
 pub struct ResponseDataTaskList {
     pub tasks: Vec<ResponseTask>,
+}
+impl From<TaskModel> for ResponseTask {
+    fn from(task: TaskModel) -> Self {
+        Self {
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            priority: task.priority,
+            completed_at: task.completed_at.map(|time| time.to_string()),
+        }
+    }
 }

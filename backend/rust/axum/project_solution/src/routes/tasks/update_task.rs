@@ -1,5 +1,5 @@
 use crate::{
-    database::tasks::{self, Column, Entity as Task},
+    database::tasks::{self, Column, Entity as Task, },
     errors::app_error::AppError,
 };
 use axum::{
@@ -7,22 +7,12 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
 };
+
 use sea_orm::{
     ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter, Set,
-    prelude::DateTimeWithTimeZone,
 };
-use serde::Deserialize;
 
-#[derive(Debug, Deserialize)]
-pub struct RequestTask {
-    pub priority: Option<String>,
-    pub title: String,
-    pub completed_at: Option<DateTimeWithTimeZone>,
-    pub description: Option<String>,
-    pub deleted_at: Option<DateTimeWithTimeZone>,
-    pub user_id: Option<i32>,
-    pub is_default: Option<bool>,
-}
+use super::RequestTask;
 
 pub async fn atomic_update_task(
     State(db): State<DatabaseConnection>,
@@ -31,13 +21,11 @@ pub async fn atomic_update_task(
 ) -> Result<StatusCode, AppError> {
     let update_task = tasks::ActiveModel {
         id: Set(task_id),
-        priority: Set(request_task.priority),
-        title: Set(request_task.title),
-        completed_at: Set(request_task.completed_at),
-        description: Set(request_task.description),
-        deleted_at: Set(request_task.deleted_at),
-        user_id: Set(request_task.user_id),
-        is_default: Set(request_task.is_default),
+        priority: Set(request_task.priority.unwrap_or(None)),
+        title: Set(request_task.title.unwrap()),
+        completed_at: Set(request_task.completed_at.unwrap_or(None)),
+        description: Set(request_task.description.unwrap_or(None)),
+        ..Default::default()
     };
 
     Task::update(update_task)

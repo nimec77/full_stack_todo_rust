@@ -1,35 +1,14 @@
-use crate::database::{tasks, tasks::Entity as Task, tasks::Model as TaskModel};
+use crate::database::{tasks, tasks::Entity as Task};
 use crate::errors::app_error::AppError;
 use axum::extract::{Path, Query, State};
 use axum::{Json, http::StatusCode};
-use chrono::{DateTime, FixedOffset};
 use sea_orm::{ColumnTrait, Condition, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
-#[derive(Debug, Serialize)]
-pub struct ResponseTask {
-    id: i32,
-    title: String,
-    description: Option<String>,
-    priority: Option<String>,
-    deleted_at: Option<DateTime<FixedOffset>>,
-    user_id: Option<i32>,
-}
+use super::ResponseTask;
 
-impl From<TaskModel> for ResponseTask {
-    fn from(task: TaskModel) -> Self {
-        Self {
-            id: task.id,
-            title: task.title,
-            description: task.description,
-            priority: task.priority,
-            deleted_at: task.deleted_at,
-            user_id: task.user_id,
-        }
-    }
-}
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 pub struct GetTaskQueryParams {
     priority: Option<String>,
 }

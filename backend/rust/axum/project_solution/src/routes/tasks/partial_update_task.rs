@@ -5,38 +5,10 @@ use axum::{
     http::StatusCode,
 };
 use sea_orm::{
-    DatabaseConnection, DbErr, EntityTrait, IntoActiveModel, Set, prelude::DateTimeWithTimeZone,
+    DatabaseConnection, DbErr, EntityTrait, IntoActiveModel, Set,
 };
-use serde::Deserialize;
 
-#[derive(Debug, Deserialize)]
-pub struct RequestTask {
-    #[serde(
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "::serde_with::rust::double_option"
-    )]
-    pub priority: Option<Option<String>>,
-    pub title: Option<String>,
-    #[serde(
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "::serde_with::rust::double_option"
-    )]
-    pub completed_at: Option<Option<DateTimeWithTimeZone>>,
-    #[serde(
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "::serde_with::rust::double_option"
-    )]
-    pub description: Option<Option<String>>,
-    #[serde(
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "::serde_with::rust::double_option"
-    )]
-    pub deleted_at: Option<Option<DateTimeWithTimeZone>>,
-}
+use super::RequestTask;
 
 pub async fn partial_update_task(
     State(db): State<DatabaseConnection>,
@@ -69,10 +41,6 @@ pub async fn partial_update_task(
 
     if let Some(description) = request_task.description {
         db_task.description = Set(description);
-    }
-
-    if let Some(deleted_at) = request_task.deleted_at {
-        db_task.deleted_at = Set(deleted_at);
     }
 
     // Update the task in the database
