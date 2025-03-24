@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use axum::{
     Json, RequestExt,
     body::Body,
@@ -11,10 +13,12 @@ use crate::errors::app_error::AppError;
 
 #[derive(Debug, Validate, Deserialize)]
 pub struct ValidateCreateTask {
-    #[validate(length(min = 1, max = 1))]
+    #[validate(length(min = 1, max = 1, message = "Priority must be one letter"))]
     pub priority: Option<String>,
     #[validate(required(message = "Missing task title"))]
     pub title: Option<String>,
+    #[validate(length(max = 1000, message = "Description must be less than 1000 characters"))]
+    pub description: Option<String>,
 }
 
 impl<S> FromRequest<S> for ValidateCreateTask
@@ -41,10 +45,13 @@ where
                 .into_iter()
                 .next()
                 .ok_or_else(|| AppError::new(StatusCode::BAD_REQUEST, "Invalid input"))?;
-            return Err(AppError::new(
-                StatusCode::BAD_REQUEST,
-                error.first().unwrap().to_owned().message.unwrap().to_string(),
-            ));
+            let error_message = error
+                .first()
+                .unwrap()
+                .to_owned()
+                .message
+                .unwrap_or(Cow::Borrowed("Invalid input"));
+            return Err(AppError::new(StatusCode::BAD_REQUEST, error_message));
         }
 
         Ok(task)

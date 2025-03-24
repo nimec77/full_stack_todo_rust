@@ -1,4 +1,4 @@
-use axum::{Extension, Json, extract::State, http::StatusCode};
+use axum::{Extension, extract::State, http::StatusCode};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, Set};
 
 use crate::{
@@ -6,17 +6,17 @@ use crate::{
     errors::app_error::AppError,
 };
 
-use super::RequestTask;
+use super::create_task_extractor::ValidateCreateTask;
 
 pub async fn create_task(
     State(db): State<DatabaseConnection>,
     Extension(user): Extension<Model>,
-    Json(request_task): Json<RequestTask>,
+    task: ValidateCreateTask,
 ) -> Result<StatusCode, AppError> {
     let new_task = tasks::ActiveModel {
-        priority: Set(request_task.priority.unwrap_or(None)),
-        title: Set(request_task.title.unwrap()),
-        description: Set(request_task.description.unwrap_or(None)),
+        priority: Set(task.priority),
+        title: Set(task.title.unwrap()),
+        description: Set(task.description),
         user_id: Set(Some(user.id)),
         ..Default::default()
     };
