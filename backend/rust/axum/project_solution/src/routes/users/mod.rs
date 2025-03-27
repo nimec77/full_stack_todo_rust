@@ -1,3 +1,5 @@
+use axum::http::StatusCode;
+use sea_orm::TryIntoModel;
 use serde::{Deserialize, Serialize};
 
 pub mod create_user;
@@ -5,7 +7,10 @@ pub mod delete_user;
 pub mod login;
 pub mod logout;
 
-use crate::database::users::ActiveModel as UserActiveModel;
+use crate::{
+    database::users::{ActiveModel as UserActiveModel, Model as UserModel},
+    errors::app_error::AppError,
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ResponseDataUser {
@@ -25,12 +30,19 @@ pub struct ResponseUser {
     token: String,
 }
 
-impl From<UserActiveModel> for ResponseUser {
-    fn from(user: UserActiveModel) -> Self {
+impl From<UserModel> for ResponseUser {
+    fn from(user: UserModel) -> Self {
         Self {
-            id: user.id.unwrap(),
-            username: user.username.unwrap(),
-            token: user.token.unwrap().unwrap(),
+            id: user.id,
+            username: user.username,
+            token: user.token.unwrap(),
         }
     }
+}
+
+fn convert_active_to_model(active_user: UserActiveModel) -> Result<UserModel, AppError> {
+    active_user.try_into_model().map_err(|error| {
+        eprintln!("Error converting task active model to model: {:?}", error);
+        AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
+    })
 }

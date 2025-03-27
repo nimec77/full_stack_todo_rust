@@ -9,7 +9,7 @@ use sea_orm::{
     QueryFilter, Set,
 };
 
-use super::{RequestUser, ResponseDataUser, ResponseUser};
+use super::{convert_active_to_model, RequestUser, ResponseDataUser, ResponseUser};
 
 pub async fn login(
     State(db): State<DatabaseConnection>,
@@ -42,8 +42,9 @@ pub async fn login(
         let saved_user = user.save(&db).await.map_err(|_: DbErr| {
             AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
         })?;
+        let user = convert_active_to_model(saved_user)?;
         Ok(Json(ResponseDataUser {
-            data: ResponseUser::from(saved_user),
+            data: ResponseUser::from(user),
         }))
     } else {
         Err(AppError::new(

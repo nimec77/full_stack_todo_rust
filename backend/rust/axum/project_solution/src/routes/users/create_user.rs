@@ -1,12 +1,12 @@
 use crate::{
-    database::users::ActiveModel as UserModel,
+    database::{tasks::{self, Entity as Tasks}, users::{ActiveModel as UserModel, Model}},
     errors::app_error::AppError,
     utilities::{hash::hash_password, jwt::create_token, token_wrapper::TokenWrapper},
 };
 use axum::{Json, extract::State, http::StatusCode};
-use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, Set};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter, Set};
 
-use super::{RequestUser, ResponseDataUser, ResponseUser};
+use super::{convert_active_to_model, RequestUser, ResponseDataUser, ResponseUser};
 
 pub async fn create_user(
     State(db): State<DatabaseConnection>,
@@ -38,7 +38,39 @@ pub async fn create_user(
         }
     })?;
 
+    let user = convert_active_to_model(new_user)?;
+
+    create_default_tasks(&user, &db).await?;
+
     Ok(Json(ResponseDataUser {
-        data: ResponseUser::from(new_user),
+        data: ResponseUser::from(user),
     }))
+}
+
+async fn create_default_tasks(user: &Model, db: &DatabaseConnection) -> Result<(), AppError> {
+    let default_tasks = Tasks::find()
+    .filter(tasks::Column::IsDefault.eq(Some(true)))
+    .all(db)
+    .await
+    .map_err(|error| {
+        eprintln!("Error getting default tasks {:?}", error);
+        AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
+    })?;
+
+    for task in default_tasks {
+        let new_task = tasks::ActiveModel {
+            user_id: Set(Some(user.id)),
+            title: Set(task.title),
+            description: Set(task.description),
+            completed_at: Set(task.completed_at),
+            deleted_at: Set(task.deleted_at),
+            ..Default::default()
+        };
+        new_task.save(db).await.map_err(|error| {
+            eprintln!("Error creating default task {:?}", error);
+            AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
+        })?;
+    }
+
+    Ok(())
 }
