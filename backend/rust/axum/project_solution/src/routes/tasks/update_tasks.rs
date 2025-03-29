@@ -81,3 +81,7 @@ pub async fn mark_uncompleted(
 
     Ok(StatusCode::OK)
 }
+
+pub async fn update_task() {
+    todo!()
+}
