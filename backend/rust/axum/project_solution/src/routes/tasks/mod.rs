@@ -4,6 +4,7 @@ pub mod partial_update_task;
 pub mod update_task;
 pub mod create_task_extractor;
 pub mod get_all_tasks;
+pub mod get_one_task;
 
 use crate::database::tasks::Model as TaskModel;
 use chrono::{DateTime, FixedOffset};
