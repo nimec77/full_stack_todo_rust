@@ -1,7 +1,5 @@
 use axum::{
-    Extension,
-    extract::{Path, State},
-    http::StatusCode,
+    extract::{Path, State}, http::StatusCode, Extension, Json
 };
 use chrono::Utc;
 use sea_orm::{
@@ -16,6 +14,8 @@ use crate::{
     },
     errors::app_error::AppError,
 };
+
+use super::RequestTask;
 
 pub async fn mark_completed(
     Path(task_id): Path<i32>,
@@ -55,7 +55,7 @@ pub async fn mark_uncompleted(
     State(db): State<DatabaseConnection>,
     Extension(user): Extension<UserModel>,
 ) -> Result<StatusCode, AppError> {
-    let mut task = Tasks::find_by_id(task_id)
+    let mut task = Tasks::find_by_id(task_id) 
         .filter(tasks::Column::UserId.eq(user.id))
         .one(&db)
         .await
@@ -82,6 +82,46 @@ pub async fn mark_uncompleted(
     Ok(StatusCode::OK)
 }
 
-pub async fn update_task() {
-    todo!()
+pub async fn update_task(
+    Path(task_id): Path<i32>,
+    State(db): State<DatabaseConnection>,
+    Extension(user): Extension<UserModel>,
+    Json(request_task): Json<RequestTask>,
+) -> Result<StatusCode, AppError> {
+    let mut task = Tasks::find_by_id(task_id) 
+    .filter(tasks::Column::UserId.eq(user.id))
+    .one(&db)
+    .await
+    .map_err(|error| {
+        eprintln!("Error getting task by id: {:?}", error);
+        AppError::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "There was an error getting your task",
+        )
+    })?
+    .ok_or(AppError::new(StatusCode::NOT_FOUND, "Task not found"))?
+    .into_active_model();
+
+    if let Some(priority) = request_task.priority {
+        task.priority = Set(priority);
+    }
+
+    if let Some(title) = request_task.title {
+        task.title = Set(title);
+    }
+
+    if let Some(description) = request_task.description {
+        task.description = Set(description);
+    }
+
+    if let Some(completed_at) = request_task.completed_at {
+        task.completed_at = Set(completed_at);
+    }
+
+    task.update(&db).await.map_err(|error| {
+        eprintln!("Error updating task: {:?}", error);
+        AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "There was an error updating your task")
+    })?;
+
+    Ok(StatusCode::OK)
 }
