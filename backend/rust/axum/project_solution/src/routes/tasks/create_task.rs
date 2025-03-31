@@ -1,29 +1,22 @@
-use axum::{Extension, extract::State, http::StatusCode};
-use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, Set};
+use axum::{extract::State, http::StatusCode, Extension, Json};
+use sea_orm::DatabaseConnection;
 
 use crate::{
-    database::{tasks, users::Model},
-    errors::app_error::AppError,
+    database::users::Model,
+    errors::app_error::AppError, queries::task_queries,
 };
 
-use super::create_task_extractor::ValidateCreateTask;
+use super::{create_task_extractor::ValidateCreateTask, ResponseDataTask};
 
 pub async fn create_task(
     State(db): State<DatabaseConnection>,
     Extension(user): Extension<Model>,
     task: ValidateCreateTask,
-) -> Result<StatusCode, AppError> {
-    let new_task = tasks::ActiveModel {
-        priority: Set(task.priority),
-        title: Set(task.title.unwrap()),
-        description: Set(task.description),
-        user_id: Set(Some(user.id)),
-        ..Default::default()
+) -> Result<(StatusCode, Json<ResponseDataTask>), AppError> {
+    let task = task_queries::create_task(task, &user, &db).await?;
+    let response_data = ResponseDataTask {
+        task: task.into(),
     };
 
-    new_task.save(&db).await.map_err(|_: DbErr| {
-        AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
-    })?;
-
-    Ok(StatusCode::CREATED)
+    Ok((StatusCode::CREATED, Json(response_data)))
 }

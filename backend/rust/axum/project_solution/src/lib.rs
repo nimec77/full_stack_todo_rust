@@ -5,6 +5,8 @@ mod middleware;
 pub mod utilities;
 pub mod app_state;
 pub mod errors;
+pub mod queries;
+
 use app_state::AppState;
 use axum::http::Uri;
 use tokio::net::TcpListener;

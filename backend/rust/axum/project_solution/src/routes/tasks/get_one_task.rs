@@ -1,14 +1,13 @@
 use axum::{
-    extract::{Path, State}, http::StatusCode, Extension, Json
+    Extension, Json,
+    extract::{Path, State},
 };
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::DatabaseConnection;
 
 use crate::{
-    database::{
-        tasks::{self, Entity as Tasks},
-        users::Model as UserModel,
-    },
+    database::users::Model as UserModel,
     errors::app_error::AppError,
+    queries::task_queries,
 };
 
 use super::ResponseDataTask;
@@ -18,24 +17,7 @@ pub async fn get_one_task(
     State(db): State<DatabaseConnection>,
     Extension(user): Extension<UserModel>,
 ) -> Result<Json<ResponseDataTask>, AppError> {
-    let task = Tasks::find_by_id(task_id)
-        .filter(tasks::Column::UserId.eq(user.id))
-        .one(&db)
-        .await
-        .map_err(|error| {
-            eprintln!("Error getting task by id: {:?}", error);
-            AppError::new(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "There was an error getting your task",
-            )
-        })?;
+    let task = task_queries::find_task_by_id(&db, task_id, user.id).await?;
 
-    let task = task.ok_or(AppError::new(
-        StatusCode::NOT_FOUND,
-        "Task not found",
-    ))?;
-
-    Ok(Json(ResponseDataTask {
-        task: task.into(),
-    }))
+    Ok(Json(ResponseDataTask { task: task.into() }))
 }
