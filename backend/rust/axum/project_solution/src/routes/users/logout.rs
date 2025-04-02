@@ -1,18 +1,18 @@
 use axum::{Extension, extract::State, http::StatusCode};
-use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, IntoActiveModel, Set};
+use sea_orm::{DatabaseConnection, IntoActiveModel, Set};
 
-use crate::{database::users::Model, errors::app_error::AppError};
+use crate::{
+    database::users::Model as UserModel, errors::app_error::AppError, queries::user_queries,
+};
 
 pub async fn logout(
     State(db): State<DatabaseConnection>,
-    Extension(user): Extension<Model>,
+    Extension(user): Extension<UserModel>,
 ) -> Result<StatusCode, AppError> {
     let mut user_model = user.into_active_model();
     user_model.token = Set(None);
 
-    user_model.save(&db).await.map_err(|_: DbErr| {
-        AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
-    })?;
+    user_queries::save_active_user(&db, user_model).await?;
 
     Ok(StatusCode::OK)
 }

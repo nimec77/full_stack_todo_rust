@@ -4,13 +4,13 @@ use crate::{
         users::{ActiveModel as UserModel, Model},
     },
     errors::app_error::AppError,
-    queries::task_queries,
+    queries::{task_queries, user_queries},
     utilities::{hash::hash_password, jwt::create_token, token_wrapper::TokenWrapper},
 };
 use axum::{Json, extract::State, http::StatusCode};
-use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, Set};
+use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 
-use super::{convert_active_to_model, RequestUser, ResponseDataUser, ResponseUser};
+use super::{RequestUser, ResponseDataUser, ResponseUser};
 
 pub async fn create_user(
     State(db): State<DatabaseConnection>,
@@ -27,22 +27,8 @@ pub async fn create_user(
         token: Set(Some(token)),
         deleted_at: Set(None),
         ..Default::default()
-    }
-    .save(&db)
-    .await
-    .map_err(|error: DbErr| {
-        println!("Error creating user: {:?}", &error);
-        let error_message = error.to_string();
-        if error_message
-            .contains("duplicate key value violates unique constraint \"users_username_key\"")
-        {
-            AppError::new(StatusCode::BAD_REQUEST, "Username already taken, try again with a different user name")
-        } else {
-            AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
-        }
-    })?;
-
-    let user = convert_active_to_model(new_user)?;
+    };
+    let user = user_queries::save_active_user(&db, new_user).await?;
 
     create_default_tasks(&user, &db).await?;
 

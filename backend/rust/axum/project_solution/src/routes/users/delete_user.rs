@@ -1,20 +1,16 @@
-use crate::{database::users::Entity as Users, errors::app_error::AppError};
-use axum::{
-    extract::{Path, State},
-    http::StatusCode,
+use crate::{
+    database::users::Model as UserModel,
+    errors::app_error::AppError,
+    queries::user_queries,
 };
-use sea_orm::{DatabaseConnection, DbErr, EntityTrait};
+use axum::{extract::State, http::StatusCode, Extension};
+use sea_orm::DatabaseConnection;
 
 pub async fn delete_user(
     State(db): State<DatabaseConnection>,
-    Path(user_id): Path<i32>,
+    Extension(user): Extension<UserModel>,
 ) -> Result<StatusCode, AppError> {
-    Users::delete_by_id(user_id)
-        .exec(&db)
-        .await
-        .map_err(|_: DbErr| {
-            AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
-        })?;
+    user_queries::delete_user(&db, user.id).await?;
 
     Ok(StatusCode::NO_CONTENT)
 }
